@@ -2589,16 +2589,23 @@ func (a *App) retainManualResultSelection(index int) {
 	}
 }
 
-// notifySelectedResult keeps ownerless-query ownership aligned with the selected row.
+// notifySelectedResult reports the selected row to core: every query gets the row's own
+// selection callback, while only ownerless queries also realign plugin ownership.
 func (a *App) notifySelectedResult() {
-	if a.services == nil || !a.querySession.queryContextKnown || (!a.querySession.queryContext.IsGlobalQuery && a.querySession.queryContext.PluginID != "") || a.resultList.resultsQueryID != a.querySession.query.QueryID {
+	if a.services == nil || a.resultList.resultsQueryID != a.querySession.query.QueryID {
+		return
+	}
+	services, ok := a.services.(contract.QuerySelectionServices)
+	if !ok {
 		return
 	}
 	id := ""
 	if a.resultList.selected >= 0 && a.resultList.selected < len(a.resultList.results) && !a.resultList.results[a.resultList.selected].IsGroup {
 		id = a.resultList.results[a.resultList.selected].ID
 	}
-	if services, ok := a.services.(contract.QuerySelectionServices); ok {
-		services.SelectedResultChanged(a.lifecycleCtx, a.sessionID, a.querySession.query.QueryID, id)
+	services.ResultSelected(a.lifecycleCtx, a.sessionID, a.querySession.query.QueryID, id)
+	if !a.querySession.queryContextKnown || (!a.querySession.queryContext.IsGlobalQuery && a.querySession.queryContext.PluginID != "") {
+		return
 	}
+	services.SelectedResultChanged(a.lifecycleCtx, a.sessionID, a.querySession.query.QueryID, id)
 }

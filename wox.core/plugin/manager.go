@@ -70,6 +70,7 @@ type Manager struct {
 	presentation                 pluginPresentation
 	ui                           common.UI
 	resultStore                  *queryResultStore
+	resultSelections             *resultSelectionDispatcher
 	pluginPreviews               *pluginPreviewRegistry
 	queryScheduler               *queryScheduler
 	autoQueryHistory             *autoQueryHistoryRecorder
@@ -110,6 +111,7 @@ func newManager() *Manager {
 			setting.GetSettingManager().AddQueryHistory(ctx, query)
 		}),
 	}
+	m.resultSelections = newResultSelectionDispatcher(resultSelectedDelay, m.resolveResultSelected)
 	m.lifecycle = newPluginLifecycle()
 	m.presentation = newPluginPresentation(m.lifecycle.GetPluginInstanceById, func() common.UI { return m.ui })
 	m.lifecycle.releasePresentation = m.presentation.releasePlugin

@@ -327,6 +327,10 @@ type QueryResult struct {
 	Actions []QueryResultAction
 	// DragData declares what can be dragged out of Wox for this result.
 	DragData *QueryResultDragData
+	// OnSelected runs once the launcher settles on this result as its selected row. It is
+	// debounced, runs off the UI thread, and must not take foreground focus from Wox.
+	// json:"-" keeps it off the plugin SDK wire format, so only system plugins can set it.
+	OnSelected func(ctx context.Context) `json:"-"`
 }
 
 const (

@@ -20,3 +20,7 @@ func (l directoryOpusLister) sourcePath(ctx context.Context) string {
 func (l directoryOpusLister) goTo(ctx context.Context, targetPath string) error {
 	return errors.New("Directory Opus is only supported on Windows")
 }
+
+func (l directoryOpusLister) selectItem(ctx context.Context, targetPath string) error {
+	return errors.New("Directory Opus is only supported on Windows")
+}
