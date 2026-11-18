@@ -21,12 +21,19 @@ func TestReleasePreparedSearchTextClearsIndicatorIndex(t *testing.T) {
 
 func TestIndicatorDescriptionMatchRejectsScatteredCharacters(t *testing.T) {
 	pattern := fuzzymatch.PreparePattern("confetti")
-	scattered := fuzzymatch.FuzzyMatchPrepared(fuzzymatch.PrepareText("Actions and previews for selected text or files"), pattern, false)
-	if !scattered.IsMatch {
-		t.Fatal("test fixture no longer exercises a fuzzy match")
+	// The shared matcher now rejects letters collected from the middle of several words,
+	// so check the threshold with a weak match directly instead of relying on a scattered fixture.
+	weak := fuzzymatch.FuzzyMatchResult{IsMatch: true, Score: int64(len("confetti")*indicatorDescriptionMinScorePerRune - 1)}
+	if strongIndicatorDescriptionMatch(weak, "confetti").IsMatch {
+		t.Fatalf("weak description match unexpectedly passed with score %d", weak.Score)
 	}
-	if strongIndicatorDescriptionMatch(scattered, "confetti").IsMatch {
-		t.Fatalf("scattered description match unexpectedly passed with score %d", scattered.Score)
+	scatteredEntry := indicatorSearchEntry{
+		preparedPluginName:     fuzzymatch.PrepareText("Selection"),
+		preparedDescription:    fuzzymatch.PrepareText("Actions and previews for selected text or files"),
+		preparedResultSubtitle: fuzzymatch.PrepareText("Activate the Selection plugin"),
+	}
+	if matched, score := matchIndicatorPluginText(scatteredEntry, pattern, "confetti", false); matched {
+		t.Fatalf("scattered description unexpectedly matched with score %d", score)
 	}
 
 	strong := fuzzymatch.FuzzyMatchPrepared(fuzzymatch.PrepareText("Launch confetti effects"), pattern, false)

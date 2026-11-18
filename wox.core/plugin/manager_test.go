@@ -827,6 +827,60 @@ func TestBuildQueryResultsSnapshotKeepsUngroupedResultsAboveFileGroup(t *testing
 	}
 }
 
+// storeSnapshotResults registers one query with the given cached results for snapshot tests.
+func storeSnapshotResults(manager *Manager, query Query, results ...QueryResult) {
+	resultSet := newQueryResultSet(query)
+	for _, result := range results {
+		resultSet.Results.Store(result.Id, &QueryResultCache{Result: result, Query: query})
+	}
+	sessionQueries := util.NewHashMap[string, *QueryResultSet]()
+	sessionQueries.Store(query.Id, resultSet)
+	manager.resultStore.sessions.Store(query.SessionId, sessionQueries)
+}
+
+// snapshotOrder renders a snapshot as ids, with group headers as "#<title>".
+func snapshotOrder(results []QueryResultUI) []string {
+	order := make([]string, 0, len(results))
+	for _, result := range results {
+		if result.IsGroup {
+			order = append(order, "#"+result.Title)
+			continue
+		}
+		order = append(order, result.Id)
+	}
+	return order
+}
+
+// Issue #4728: an exact title match must outrank partial matches, even when it comes from the grouped file section.
+func TestBuildQueryResultsSnapshotPlacesExactTitleMatchFirstInGlobalQuery(t *testing.T) {
+	query := Query{Id: "query-exact", SessionId: "session-exact", Type: QueryTypeInput, Search: "readwise"}
+	manager := &Manager{resultStore: newQueryResultStore()}
+	storeSnapshotResults(manager, query,
+		QueryResult{Id: "control-panel", Title: "Replace sounds with visual cues", Score: 300},
+		QueryResult{Id: "store", Title: "Asyntai AI Chatbot", Score: 250},
+		QueryResult{Id: "pinned", Title: "Pinned note", Score: 1, Tails: []QueryResultTail{queryPinTail()}},
+		QueryResult{Id: "folder-exact", Title: "Readwise", Score: 10, Group: "Files"},
+		QueryResult{Id: "folder-partial", Title: "Readwise notes", Score: 50, Group: "Files"},
+		QueryResult{Id: "app-exact", Title: "  READWISE ", Score: 40},
+	)
+
+	got := snapshotOrder(manager.BuildQueryResultsSnapshot(query.SessionId, query.Id))
+	want := []string{"pinned", "app-exact", "folder-exact", "control-panel", "store", "#Files", "folder-partial"}
+	assert.Equal(t, want, got)
+}
+
+func TestBuildQueryResultsSnapshotKeepsExactTitleInGroupForTriggeredQuery(t *testing.T) {
+	query := Query{Id: "query-triggered", SessionId: "session-triggered", Type: QueryTypeInput, TriggerKeyword: "f", Search: "readwise"}
+	manager := &Manager{resultStore: newQueryResultStore()}
+	storeSnapshotResults(manager, query,
+		QueryResult{Id: "other", Title: "Readwise notes", Score: 300},
+		QueryResult{Id: "folder-exact", Title: "Readwise", Score: 10, Group: "Files"},
+	)
+
+	got := snapshotOrder(manager.BuildQueryResultsSnapshot(query.SessionId, query.Id))
+	assert.Equal(t, []string{"other", "#Files", "folder-exact"}, got)
+}
+
 func TestBuildQueryResultsSnapshotPrefersShorterTitleAndSubtitleOnEqualScore(t *testing.T) {
 	query := Query{Id: "query-tie", SessionId: "session-tie", Type: QueryTypeInput, Search: "qqyy"}
 	manager := &Manager{

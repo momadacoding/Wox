@@ -177,6 +177,69 @@ func TestFuzzyMatchScoreComparison(t *testing.T) {
 	}
 }
 
+// fuzzyMatchAllEntryPoints runs every public matcher so ASCII and normalized-rune paths stay consistent.
+func fuzzyMatchAllEntryPoints(text string, query string) []FuzzyMatchResult {
+	pattern := PreparePattern(query)
+	return []FuzzyMatchResult{
+		FuzzyMatch(text, query, false),
+		FuzzyMatchPrepared(PrepareText(text), pattern, false),
+		FuzzyMatchPattern(text, pattern, isASCII(text), false),
+		FuzzyMatchPatternAtLeast(text, pattern, isASCII(text), false, 1),
+	}
+}
+
+// Issue #4728: queries matched titles and descriptions by collecting letters from the middle of several words.
+func TestFuzzyMatchRejectsScatteredMatchEnteringWordsMidway(t *testing.T) {
+	cases := []struct {
+		text  string
+		query string
+	}{
+		{"From thought to insight, with agents", "mingw"},
+		{"Streamlabs streaming software", "mingw"},
+		{"SystemSettingsAdminFlows", "mingw"},
+		{"SystemSettingsAdminFlows.exe", "mingw"},
+		{"From thought to insight, with agents — SiYuan", "mingw"},
+		{"Replace sounds with visual cues", "readwise"},
+		{"Replace sounds with visual cues — Control Panel", "readwise"},
+		{"Read your website chats, leads and tickets, and ask your Asyntai AI chatbot, right from Wox.", "readwise"},
+		{"aXbXcXdef", "abc"},
+	}
+	for _, c := range cases {
+		for _, result := range fuzzyMatchAllEntryPoints(c.text, c.query) {
+			assert.False(t, result.IsMatch, "%q should not match %q", c.query, c.text)
+		}
+	}
+}
+
+func TestFuzzyMatchKeepsScatteredMatchEnteringWordsAtStart(t *testing.T) {
+	cases := []struct {
+		text  string
+		query string
+	}{
+		{"MinGW Installer", "mingw"},
+		{"x86_64-w64-mingw32-gcc", "mingw"},
+		{"Visual Studio Code", "vsc"},
+		{"moduleNameResolver", "mnr"},
+		{"show-task-view", "shot"},
+		{"Show the current awake status", "shot"},
+		{"Visual Studio Code — Insiders", "vsc"},
+		{"Visual Studio Code", "vs code"},
+		{"XMLHttpRequest", "xhr"},
+		{"Notepad", "ntpd"},
+		{"Notepad — Windows", "ntpd"},
+		{"Adobe Photoshop", "pshop"},
+		{"Windows PowerShell", "pwsh"},
+		{"Readwise", "readwise"},
+		{"钉钉DingTalk", "dtalk"},
+		{"微信WeChat", "wcht"},
+	}
+	for _, c := range cases {
+		for _, result := range fuzzyMatchAllEntryPoints(c.text, c.query) {
+			assert.True(t, result.IsMatch, "%q should match %q", c.query, c.text)
+		}
+	}
+}
+
 func TestFuzzyMatchPinyinAdvanced(t *testing.T) {
 	// Full pinyin match
 	assert.True(t, FuzzyMatch("微信", "weixin", true).IsMatch)
