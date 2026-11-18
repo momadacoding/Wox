@@ -1471,6 +1471,18 @@ func GetFileExplorerPathByPid(pid int) string {
 
 // SelectInFileExplorer selects a file in the captured Explorer window/tab and restores its file-list focus.
 func SelectInFileExplorer(pid int, fullPath string, windowTitle string, windowId string) bool {
+	return selectInFileExplorer(pid, fullPath, windowTitle, windowId, true)
+}
+
+// HighlightInFileExplorer selects a file in the captured Explorer window/tab without
+// activating Explorer, so Wox keeps keyboard focus while the selection follows its list.
+func HighlightInFileExplorer(pid int, fullPath string, windowTitle string, windowId string) bool {
+	return selectInFileExplorer(pid, fullPath, windowTitle, windowId, false)
+}
+
+// selectInFileExplorer drives the Explorer tab's SelectItem; restoreFocus also brings
+// Explorer to the foreground with keyboard focus on its file list.
+func selectInFileExplorer(pid int, fullPath string, windowTitle string, windowId string, restoreFocus bool) bool {
 	if pid <= 0 || fullPath == "" {
 		return false
 	}
@@ -1782,7 +1794,7 @@ func SelectInFileExplorer(pid int, fullPath string, windowTitle string, windowId
 	documentVar.Clear()
 	itemVar.Clear()
 
-	if err == nil {
+	if err == nil && restoreFocus {
 		C.focusFileExplorerContentByHwnd(C.uintptr_t(targetHwnd))
 	}
 	return err == nil

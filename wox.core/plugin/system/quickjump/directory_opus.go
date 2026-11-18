@@ -3,6 +3,7 @@ package quickjump
 import (
 	"encoding/xml"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -54,4 +55,12 @@ func selectDirectoryOpusSourcePath(data []byte, listerHwnd uintptr) string {
 // as escapes, so a root such as D:\ can stay quoted as-is.
 func buildDirectoryOpusGoArgs(targetPath string) string {
 	return fmt.Sprintf(`/acmd Go PATH="%s"`, strings.TrimSpace(targetPath))
+}
+
+// buildDirectoryOpusSelectArgs returns the dopusrt arguments that select targetPath's item in
+// the active lister's source tab without navigating, so Wox's list can drive the selection while
+// the user is still choosing. EXACT keeps wildcard characters in the name literal.
+func buildDirectoryOpusSelectArgs(targetPath string) string {
+	name := filepath.Base(strings.TrimSpace(targetPath))
+	return fmt.Sprintf(`/acmd Select PATTERN="%s" EXACT DESELECTNOMATCH SETFOCUS MAKEVISIBLE=immediate`, name)
 }

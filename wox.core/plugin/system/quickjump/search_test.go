@@ -3,6 +3,7 @@ package quickjump
 import (
 	"path/filepath"
 	"testing"
+	"wox/common"
 	"wox/plugin"
 	"wox/util"
 )
@@ -184,5 +185,43 @@ func TestPrioritizeSavedQuickJumpPaths(t *testing.T) {
 		if len(ranked) != 1 || len(ranked[0].Tails) != 1 {
 			t.Fatal("saved Windows paths must match without case sensitivity")
 		}
+	}
+}
+
+func TestCurrentFolderRowsFollowLauncherSelection(t *testing.T) {
+	quickJumpPlugin := &QuickJumpPlugin{}
+	root := t.TempDir()
+	query := plugin.Query{}
+	localPath := filepath.Join(root, "AGENTS.md")
+	// Searches with spaces such as "plugin python" miss the local fuzzy match, so the
+	// current-folder row comes from the global index instead of the folder listing.
+	indexedLocalPath := filepath.Join(root, "wox.plugin.python")
+	nestedPath := filepath.Join(root, "docs", "AGENTS.md")
+	elsewherePath := filepath.Join(filepath.Dir(root), "other", "AGENTS.md")
+
+	indexed := []plugin.QueryResult{
+		quickJumpPlugin.buildDirectoryEntryResult(query, "wox.plugin.python", indexedLocalPath, true, common.WoxImage{}, 0, true),
+		quickJumpPlugin.buildDirectoryEntryResult(query, "AGENTS.md", nestedPath, false, common.WoxImage{}, 0, true),
+		quickJumpPlugin.buildDirectoryEntryResult(query, "AGENTS.md", elsewherePath, false, common.WoxImage{}, 0, true),
+	}
+	local := []plugin.QueryResult{
+		quickJumpPlugin.buildDirectoryEntryResult(query, "AGENTS.md", localPath, false, common.WoxImage{}, 0, false),
+	}
+	merged := mergeCurrentDirectoryResults(indexed, local, root, quickJumpPlugin.normalizePathKey)
+	merged = quickJumpPlugin.followLauncherSelectionInFolder(query.Env, merged, root)
+
+	byPath := map[string]plugin.QueryResult{}
+	for _, item := range merged {
+		byPath[item.SubTitle] = item
+	}
+	if byPath[localPath].OnSelected == nil {
+		t.Fatal("a current-folder row from the folder listing should follow the launcher selection")
+	}
+	if byPath[indexedLocalPath].OnSelected == nil {
+		t.Fatal("a current-folder row from the global index should follow the launcher selection too")
+	}
+	// Following other folders' hits would navigate the file manager away while the user browses.
+	if byPath[nestedPath].OnSelected != nil || byPath[elsewherePath].OnSelected != nil {
+		t.Fatal("rows outside the current folder must not drive the file manager selection")
 	}
 }

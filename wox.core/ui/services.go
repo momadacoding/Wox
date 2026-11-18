@@ -331,6 +331,11 @@ func (s *CoreServices) SelectedResultChanged(ctx context.Context, sessionID, que
 	plugin.GetPluginManager().SelectResultContext(uiServiceContext(ctx, sessionID), sessionID, queryID, resultID)
 }
 
+// ResultSelected schedules the selected result's own selection callback.
+func (s *CoreServices) ResultSelected(ctx context.Context, sessionID, queryID, resultID string) {
+	plugin.GetPluginManager().ResultSelected(uiServiceContext(ctx, sessionID), sessionID, queryID, resultID)
+}
+
 // BeginSessionQuery invalidates stale results before asynchronous MRU restoration starts.
 func (s *CoreServices) BeginSessionQuery(_ context.Context, sessionID, queryID string) {
 	plugin.GetPluginManager().BeginSessionQuery(sessionID, queryID)

@@ -181,3 +181,24 @@ func findActiveDirectoryOpusLister(t *testing.T) directoryOpusLister {
 	t.Skip("Opus reported no active lister")
 	return directoryOpusLister{}
 }
+
+func TestBuildDirectoryOpusSelectArgs(t *testing.T) {
+	tests := []struct {
+		name   string
+		target string
+		want   string
+	}{
+		{name: "file", target: `C:\Repo\AGENTS.md`, want: `/acmd Select PATTERN="AGENTS.md" EXACT DESELECTNOMATCH SETFOCUS MAKEVISIBLE=immediate`},
+		{name: "dot folder", target: `C:\Repo\.agents`, want: `/acmd Select PATTERN=".agents" EXACT DESELECTNOMATCH SETFOCUS MAKEVISIBLE=immediate`},
+		// EXACT keeps wildcard characters literal, so names such as "[draft]*" select only themselves.
+		{name: "wildcard characters", target: `D:\My Files\[draft] *v2.pdf`, want: `/acmd Select PATTERN="[draft] *v2.pdf" EXACT DESELECTNOMATCH SETFOCUS MAKEVISIBLE=immediate`},
+		{name: "unicode", target: `D:\中文 目录\文件.txt`, want: `/acmd Select PATTERN="文件.txt" EXACT DESELECTNOMATCH SETFOCUS MAKEVISIBLE=immediate`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := buildDirectoryOpusSelectArgs(tt.target); got != tt.want {
+				t.Fatalf("args = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

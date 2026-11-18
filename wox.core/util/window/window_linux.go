@@ -193,3 +193,8 @@ func IsFileExplorer(pid int) (bool, error) {
 func SelectInFileExplorer(pid int, fullPath string, windowTitle string, windowId string) bool {
 	return false
 }
+
+// HighlightInFileExplorer is not supported on this platform.
+func HighlightInFileExplorer(pid int, fullPath string, windowTitle string, windowId string) bool {
+	return false
+}

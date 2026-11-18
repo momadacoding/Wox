@@ -300,7 +300,26 @@ func (c *QuickJumpPlugin) prioritizeCurrentDirectoryHits(ctx context.Context, qu
 	if currentPath != "" {
 		localResults = c.queryDirectoryEntriesAtPath(ctx, query, currentPath, strings.TrimSpace(query.Search))
 	}
-	return mergeCurrentDirectoryResults(indexedResults, localResults, currentPath, c.normalizePathKey)
+	merged := mergeCurrentDirectoryResults(indexedResults, localResults, currentPath, c.normalizePathKey)
+	return c.followLauncherSelectionInFolder(query.Env, merged, currentPath)
+}
+
+// followLauncherSelectionInFolder lets every row directly inside currentDir select its item in
+// the file manager while highlighted. It keys off the path rather than where the row came from:
+// searches with spaces miss the local fuzzy match, so a current-folder row can come from the
+// global index. Rows elsewhere stay inert, because following them would navigate the file
+// manager away from the folder the user is browsing.
+func (c *QuickJumpPlugin) followLauncherSelectionInFolder(env plugin.QueryEnv, results []plugin.QueryResult, currentDir string) []plugin.QueryResult {
+	for index := range results {
+		fullPath := results[index].SubTitle
+		if !isDirectChildPath(fullPath, currentDir, c.normalizePathKey) {
+			continue
+		}
+		results[index].OnSelected = func(ctx context.Context) {
+			c.highlightEntry(ctx, env, fullPath)
+		}
+	}
+	return results
 }
 
 // queryFileSearchResults converts global indexed results into Explorer-specific actions.
@@ -400,7 +419,8 @@ func (c *QuickJumpPlugin) queryCurrentDirectoryEntries(ctx context.Context, quer
 		c.api.Log(ctx, plugin.LogLevelWarning, fmt.Sprintf("Explorer current directory query skipped: path not found (search=%q, pid=%d, title=%q, isOpenSaveDialog=%v, isOpenSaveDialogSelectFolder=%v)", query.Search, query.Env.ActiveWindowPid, query.Env.ActiveWindowTitle, query.Env.ActiveWindowIsOpenSaveDialog, query.Env.ActiveWindowIsOpenSaveDialogSelectFolder))
 		return []plugin.QueryResult{}
 	}
-	return c.queryDirectoryEntriesAtPath(ctx, query, currentPath, strings.TrimSpace(query.Search))
+	results := c.queryDirectoryEntriesAtPath(ctx, query, currentPath, strings.TrimSpace(query.Search))
+	return c.followLauncherSelectionInFolder(query.Env, results, currentPath)
 }
 
 func (c *QuickJumpPlugin) queryDirectoryEntriesAtPath(ctx context.Context, query plugin.Query, dirPath string, search string) []plugin.QueryResult {
@@ -491,6 +511,28 @@ func (c *QuickJumpPlugin) buildDirectoryEntryResult(query plugin.Query, title st
 // buildExecuteCommandAtLocationAction opens Shell with the selected location as its working directory.
 func (c *QuickJumpPlugin) buildExecuteCommandAtLocationAction(path string, isDir bool) plugin.QueryResultAction {
 	return shellplugin.OpenAtDirectoryAction(c.api, path, isDir)
+}
+
+// highlightEntry selects a current-folder item in the source file manager while it is the
+// launcher's selected row. Unlike revealEntry it never navigates, hides Wox, or activates the
+// file manager, so the user keeps typing and moving through results.
+func (c *QuickJumpPlugin) highlightEntry(ctx context.Context, env plugin.QueryEnv, fullPath string) {
+	selected := false
+	target := "explorer"
+	if env.ActiveWindowIsOpenSaveDialog {
+		// Only the injected Shell-view hook selects without activating the dialog; the
+		// UI Automation fallback used by revealEntry would take focus from Wox.
+		target = "open/save dialog"
+		selected = selectFileDialogItemWithHook(ctx, env.ActiveWindowId, env.ActiveWindowPid, fullPath, false)
+	} else if opusLister, ok := findDirectoryOpusLister(env.ActiveWindowPid, env.ActiveWindowId); ok {
+		target = "Directory Opus"
+		selected = opusLister.selectItem(ctx, fullPath) == nil
+	} else {
+		selected = window.HighlightInFileExplorer(env.ActiveWindowPid, fullPath, env.ActiveWindowTitle, env.ActiveWindowId)
+	}
+	if !selected {
+		c.api.Log(ctx, plugin.LogLevelDebug, fmt.Sprintf("Follow launcher selection in %s skipped: pid=%d windowId=%q path=%s", target, env.ActiveWindowPid, env.ActiveWindowId, fullPath))
+	}
 }
 
 func (c *QuickJumpPlugin) revealEntry(ctx context.Context, env plugin.QueryEnv, fullPath string, isDir bool, isGlobalResult bool) {

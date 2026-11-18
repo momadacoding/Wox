@@ -547,6 +547,12 @@ func SelectInFileExplorer(pid int, fullPath string, windowTitle string, windowId
 	return int(C.selectInFinder(cPath)) == 1
 }
 
+// HighlightInFileExplorer is unsupported: Finder only reveals items through AppleScript
+// `activate`, which would take focus away from Wox.
+func HighlightInFileExplorer(pid int, fullPath string, windowTitle string, windowId string) bool {
+	return false
+}
+
 // macOS native fullscreen includes ordinary workspaces and cannot distinguish games
 // or fullscreen video. Suppressing hotkeys would also block everyday launcher use.
 func SupportsActiveWindowFullscreen() bool { return false }

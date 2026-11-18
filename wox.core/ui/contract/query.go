@@ -75,4 +75,7 @@ type QueryServices interface {
 type QuerySelectionServices interface {
 	BeginSessionQuery(ctx context.Context, sessionID, queryID string)
 	SelectedResultChanged(ctx context.Context, sessionID, queryID, resultID string)
+	// ResultSelected reports the selected row of every query, including plugin-owned ones,
+	// so the row's own OnSelected callback can run. An empty resultID clears the selection.
+	ResultSelected(ctx context.Context, sessionID, queryID, resultID string)
 }

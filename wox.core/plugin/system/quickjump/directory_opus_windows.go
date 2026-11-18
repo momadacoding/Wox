@@ -97,6 +97,12 @@ func (l directoryOpusLister) goTo(ctx context.Context, targetPath string) error 
 	return runDirectoryOpusRT(ctx, l.dopusrtPath, buildDirectoryOpusGoArgs(targetPath))
 }
 
+// selectItem selects targetPath's item in the active lister's source tab without navigating
+// or activating Opus. Callers only pass items that live in that tab's folder.
+func (l directoryOpusLister) selectItem(ctx context.Context, targetPath string) error {
+	return runDirectoryOpusRT(ctx, l.dopusrtPath, buildDirectoryOpusSelectArgs(targetPath))
+}
+
 // queryDirectoryOpusPaths runs `dopusrt /info <file>,paths`, the documented way for external
 // programs to read Opus tab paths. dopusrt writes the XML before it exits (~20ms when warm).
 func queryDirectoryOpusPaths(ctx context.Context, dopusrtPath string) ([]byte, error) {
