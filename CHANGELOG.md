@@ -1,5 +1,37 @@
 # Changelog
 
+## v2.5.1 - 2026-11-19
+
+This release is built from the [momadacoding/Wox](https://github.com/momadacoding/Wox) fork. It includes everything merged upstream since v2.5.0, plus fork-only search and Quick Jump changes. Builds from this fork are not code signed, and automatic updates now come from this fork's releases.
+
+- Add
+  - [`Quick Jump`] On Windows, File Explorer and Directory Opus select the matching item in the current folder as you move through results, while Wox keeps focus. [#1](https://github.com/momadacoding/Wox/pull/1)
+  - [`Language`] Download more interface languages when you need them, starting with Spanish. English and Simplified Chinese stay bundled. [#4720](https://github.com/Wox-launcher/Wox/issues/4720)
+  - [`Interface`] Choose the new Large interface size for bigger text and controls. [#4715](https://github.com/Wox-launcher/Wox/issues/4715)
+  - [`Clipboard`] Send clipboard text and images to nearby devices with LocalSend when the LocalSend plugin is installed.
+
+- Improve
+  - [`Search`] Results whose title matches your query exactly now rank above partial matches, and loosely scattered fuzzy matches no longer appear. [#4728](https://github.com/Wox-launcher/Wox/issues/4728)
+  - [`File Search`] When global file results are capped, choose Search more to continue the query in File Search.
+  - [`AI Chat`] Set how many tool-call rounds a message may use, or turn the limit off. Wox tells you when the limit is reached and keeps the reply so far. [#4729](https://github.com/Wox-launcher/Wox/issues/4729)
+  - [`Screenshot`] Successful captures finish quietly, Windows recordings drop fewer frames, and fullscreen recording controls stay visible.
+  - [`Hotkey`] Use numpad keys in shortcuts on every platform. [#4716](https://github.com/Wox-launcher/Wox/issues/4716)
+
+- Fix
+  - [`App`] Windows Settings pages and UWP apps no longer match unrelated queries. [#4728](https://github.com/Wox-launcher/Wox/issues/4728)
+  - [`OCR`] Windows system OCR no longer depends on PowerShell. [#4721](https://github.com/Wox-launcher/Wox/issues/4721)
+  - [`Launcher`] Keep the selection and caret steady while typing, align query highlights with the text, and stop stray scrollbars and result jitter. [#4710](https://github.com/Wox-launcher/Wox/issues/4710)
+  - [`Linux`] Sharper text, working multi-monitor screenshots and window placement on KDE, no repeated clipboard authorization prompts on KDE, and browser bookmark indexing works again. [#4711](https://github.com/Wox-launcher/Wox/issues/4711) [#4712](https://github.com/Wox-launcher/Wox/issues/4712) [#4713](https://github.com/Wox-launcher/Wox/issues/4713) [#4714](https://github.com/Wox-launcher/Wox/issues/4714)
+  - [`AI`] Streaming replies no longer break on providers that send keep-alive messages.
+  - [`Notifications`] Toast actions stay on the same line when they fit.
+
+- Store
+  - Plugin
+    - [Stickies](https://github.com/dragonish/Wox.Plugin.Stickies) Create, browse, search and manage Stickies notes from Wox. [@dragonish](https://github.com/dragonish)
+    - [Dictionary](https://github.com/skulltrail/Wox.Plugin.Dictionary) Look up word definitions directly in Wox. [@skulltrail](https://github.com/skulltrail)
+  - Theme
+    - Tokyo Night, Tokyo Night Light, Retro Terminal, Pink Romance, and 8-Bit Night
+
 ## v2.5.0 - 2026-11-09
 
 Plugins can now open native windows and let you interact directly with search previews. Timer and Dictation are now standalone plugins you can install from the Wox Store as needed. We explain the move in [Keeping Wox Simple](https://www.woxlauncher.com/blog/a-smaller-core-with-plugins.html).

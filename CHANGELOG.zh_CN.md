@@ -1,5 +1,37 @@
 # Changelog
 
+## v2.5.1 - 2026-11-19
+
+本版本基于 [momadacoding/Wox](https://github.com/momadacoding/Wox) fork 构建，包含 v2.5.0 之后上游合入的全部改动，以及 fork 独有的搜索和 Quick Jump 改动。此 fork 的安装包没有代码签名，自动更新也改为从此 fork 的 Release 获取。
+
+- Add
+  - [`Quick Jump`] 在 Windows 上，于结果列表中移动时，文件资源管理器和 Directory Opus 会同步选中当前文件夹里对应的项目，Wox 保持焦点。 [#1](https://github.com/momadacoding/Wox/pull/1)
+  - [`语言`] 可以按需下载更多界面语言，首个新增语言是西班牙语。英文和简体中文仍随安装包内置。 [#4720](https://github.com/Wox-launcher/Wox/issues/4720)
+  - [`界面`] 新增「大」界面尺寸，文字和控件更大。 [#4715](https://github.com/Wox-launcher/Wox/issues/4715)
+  - [`剪贴板`] 安装 LocalSend 插件后，可以把剪贴板里的文字和图片发送到附近设备。
+
+- Improve
+  - [`搜索`] 标题与输入完全一致的结果排在部分匹配之前，零散分布的模糊匹配不再出现。 [#4728](https://github.com/Wox-launcher/Wox/issues/4728)
+  - [`文件搜索`] 全局搜索的文件结果被截断时，可以选择「搜索更多」在文件搜索里继续查询。
+  - [`AI Chat`] 可以设置每条消息允许的工具调用轮数，也可以关闭限制。达到上限时会提示，并保留已生成的回复。 [#4729](https://github.com/Wox-launcher/Wox/issues/4729)
+  - [`截图`] 截图成功后不再弹出提示，Windows 录屏掉帧更少，全屏录制时控制按钮保持可见。
+  - [`快捷键`] 各平台都可以在快捷键里使用小键盘按键。 [#4716](https://github.com/Wox-launcher/Wox/issues/4716)
+
+- Fix
+  - [`应用`] Windows 设置页和 UWP 应用不再匹配无关的输入。 [#4728](https://github.com/Wox-launcher/Wox/issues/4728)
+  - [`OCR`] Windows 系统 OCR 不再依赖 PowerShell。 [#4721](https://github.com/Wox-launcher/Wox/issues/4721)
+  - [`启动器`] 输入时选中项和光标保持稳定，输入高亮与文字对齐，并消除多余的滚动条和结果抖动。 [#4710](https://github.com/Wox-launcher/Wox/issues/4710)
+  - [`Linux`] 文字更清晰；KDE 上多显示器截图和窗口定位恢复正常，剪贴板不再反复请求授权；浏览器书签索引恢复。 [#4711](https://github.com/Wox-launcher/Wox/issues/4711) [#4712](https://github.com/Wox-launcher/Wox/issues/4712) [#4713](https://github.com/Wox-launcher/Wox/issues/4713) [#4714](https://github.com/Wox-launcher/Wox/issues/4714)
+  - [`AI`] 服务商发送保活消息时，流式回复不再中断。
+  - [`通知`] 放得下时，通知按钮保持在同一行。
+
+- Store
+  - Plugin
+    - [Stickies](https://github.com/dragonish/Wox.Plugin.Stickies) 通过 Wox 创建、浏览、搜索和管理 Stickies 便签。 [@dragonish](https://github.com/dragonish)
+    - [Dictionary](https://github.com/skulltrail/Wox.Plugin.Dictionary) Look up word definitions directly in Wox. [@skulltrail](https://github.com/skulltrail)
+  - Theme
+    - Tokyo Night、Tokyo Night Light、Retro Terminal、Pink Romance 和 8-Bit Night
+
 ## v2.5.0 - 2026-11-09
 
 插件现在可以打开原生窗口，也可以让你直接在搜索结果的预览中操作。计时器和听写改为独立插件，可在 Wox 商店按需安装，查看[此博客](https://www.woxlauncher.com/zh/blog/a-smaller-core-with-plugins.html)了解我们为什么这么做。
