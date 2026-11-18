@@ -32,8 +32,10 @@ const (
 
 var currentUpdateInfo = UpdateInfo{Status: UpdateStatusNone} // global variable to store update info
 
-const stableVersionManifestUrl = "https://raw.githubusercontent.com/Wox-launcher/Wox/master/updater.json"
-const betaVersionManifestUrl = "https://raw.githubusercontent.com/Wox-launcher/Wox/master/updater.beta.json"
+// Fork builds read the fork's own manifests. The upstream manifests would offer upstream
+// releases as upgrades, and installing one would drop the fork's changes.
+const stableVersionManifestUrl = "https://raw.githubusercontent.com/momadacoding/Wox/master/updater.json"
+const betaVersionManifestUrl = "https://raw.githubusercontent.com/momadacoding/Wox/master/updater.beta.json"
 
 type VersionManifest struct {
 	Version string
