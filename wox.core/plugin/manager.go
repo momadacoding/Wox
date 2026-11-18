@@ -1347,10 +1347,23 @@ func (m *Manager) buildQueryResultsSnapshot(sessionId string, queryId string, sh
 	// sorts first, and an older day group would keep the pin below Today.
 	groupScores := map[string]int64{}
 	var pinnedResults []*QueryResultCache
+	var exactResults []*QueryResultCache
 	groupedResults := make(map[string][]*QueryResultCache)
+	// Issue #4728: in global search an exact title match outranks every partial
+	// match, including rows from the File group, which otherwise always sorts
+	// below ungrouped results regardless of how well its rows match. Triggered
+	// queries keep the plugin's own grouping.
+	exactTitle := ""
+	if set.Query.IsGlobalQuery() {
+		exactTitle = strings.TrimSpace(set.Query.Search)
+	}
 	for _, resultCache := range resultCaches {
 		if queryResultPinned(resultCache.Result) {
 			pinnedResults = append(pinnedResults, resultCache)
+			continue
+		}
+		if exactTitle != "" && strings.EqualFold(strings.TrimSpace(resultCache.Result.Title), exactTitle) {
+			exactResults = append(exactResults, resultCache)
 			continue
 		}
 		result := resultCache.Result
@@ -1362,6 +1375,9 @@ func (m *Manager) buildQueryResultsSnapshot(sessionId string, queryId string, sh
 	// Every pin is already in the same tier, so this keeps their original score order.
 	sort.SliceStable(pinnedResults, func(i, j int) bool {
 		return compareQueryResultCachesForDisplay(pinnedResults[i], pinnedResults[j]) < 0
+	})
+	sort.SliceStable(exactResults, func(i, j int) bool {
+		return compareQueryResultCachesForDisplay(exactResults[i], exactResults[j]) < 0
 	})
 
 	var groups []string
@@ -1390,6 +1406,9 @@ func (m *Manager) buildQueryResultsSnapshot(sessionId string, queryId string, sh
 		finalResults = append(finalResults, m.buildResultUI(resultCache, queryId))
 	}
 	for _, resultCache := range pinnedResults {
+		finalResults = append(finalResults, m.buildResultUI(resultCache, queryId))
+	}
+	for _, resultCache := range exactResults {
 		finalResults = append(finalResults, m.buildResultUI(resultCache, queryId))
 	}
 	for _, group := range groups {
