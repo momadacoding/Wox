@@ -29,15 +29,14 @@ const (
 	ToolBrowsePath          = "browse_path"
 	folderResultScore int64 = 1000
 
-	folderOpenActionID                   = "open_folder"
-	folderGoToParentActionID             = "go_to_parent_folder"
-	folderEnterActionID                  = "enter_folder"
-	folderBrowseContainingFolderActionID = "browse_containing_folder"
-	folderOpenContainingFolderActionID   = "open_containing_folder"
-	folderCopyPathActionID               = "copy_path"
-	folderCopyNameActionID               = "copy_name"
-	folderExecuteCommandHereActionID     = "execute_command_here"
-	folderToggleHiddenFilesActionID      = "toggle_hidden_files"
+	folderOpenActionID                 = "open_folder"
+	folderGoToParentActionID           = "go_to_parent_folder"
+	folderEnterActionID                = "enter_folder"
+	folderOpenContainingFolderActionID = "open_containing_folder"
+	folderCopyPathActionID             = "copy_path"
+	folderCopyNameActionID             = "copy_name"
+	folderExecuteCommandHereActionID   = "execute_command_here"
+	folderToggleHiddenFilesActionID    = "toggle_hidden_files"
 
 	folderFavoritesSettingKey     = "favorites"
 	folderFavoriteFormNameKey     = "name"
@@ -466,7 +465,7 @@ func (p *FolderPlugin) buildFavoriteResult(name string, path string, isDir bool,
 	}
 }
 
-// buildPathActions keeps Enter opening the path while Shift+Enter browses its directory in Wox.
+// buildPathActions keeps Enter opening the path while Shift+Enter browses a folder in Wox.
 func (p *FolderPlugin) buildPathActions(path string, isDir bool, favoriteMatch *folderFavoriteMatch) []plugin.QueryResultAction {
 	actions := []plugin.QueryResultAction{
 		{
@@ -478,10 +477,10 @@ func (p *FolderPlugin) buildPathActions(path string, isDir bool, favoriteMatch *
 				_ = shell.Open(path)
 			},
 		},
-		p.buildBrowseAction(path, isDir),
 	}
 
 	if isDir {
+		actions = append(actions, p.buildEnterFolderAction(path))
 		actions = append(actions, p.buildCopyPathAction(path), p.buildCopyNameAction("", path))
 		actions = append(actions, p.buildExecuteCommandAtLocationAction(path, true))
 		if favoriteMatch != nil {
@@ -520,9 +519,10 @@ func (p *FolderPlugin) buildFavoriteActions(name string, path string, isDir bool
 				_ = shell.Open(path)
 			},
 		},
-		p.buildBrowseAction(path, isDir),
 	}
-	if !isDir {
+	if isDir {
+		actions = append(actions, p.buildEnterFolderAction(path))
+	} else {
 		actions = append(actions, plugin.QueryResultAction{
 			Id:   folderOpenContainingFolderActionID,
 			Name: "i18n:plugin_folder_open_containing_folder",
@@ -546,18 +546,12 @@ func (p *FolderPlugin) buildFavoriteActions(name string, path string, isDir bool
 	return actions
 }
 
-// buildBrowseAction shares directory navigation across path results and saved favorites.
-func (p *FolderPlugin) buildBrowseAction(path string, isDir bool) plugin.QueryResultAction {
-	id := folderEnterActionID
-	name := "i18n:plugin_folder_enter"
-	if !isDir {
-		path = filepath.Dir(path)
-		id = folderBrowseContainingFolderActionID
-		name = "i18n:plugin_folder_browse_containing_folder"
-	}
+// buildEnterFolderAction shares folder navigation across path results and saved favorites.
+// Files intentionally get no counterpart: "open containing folder" already covers that need.
+func (p *FolderPlugin) buildEnterFolderAction(path string) plugin.QueryResultAction {
 	return plugin.QueryResultAction{
-		Id:                     id,
-		Name:                   name,
+		Id:                     folderEnterActionID,
+		Name:                   "i18n:plugin_folder_enter",
 		Icon:                   icons.Get(icons.ActionOpen),
 		Hotkey:                 "shift+enter",
 		PreventHideAfterAction: true,
