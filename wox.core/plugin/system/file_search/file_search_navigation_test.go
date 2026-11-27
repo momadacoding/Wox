@@ -53,12 +53,19 @@ func TestFileSearchShiftEnterBrowsesFilesAndFolders(t *testing.T) {
 					action.Action(t.Context(), plugin.ActionContext{})
 				}
 			}
+			if !item.IsDir {
+				// Files only reveal in the system file manager; browsing the parent in Wox was dropped.
+				if browseCount != 0 {
+					t.Fatalf("file results must not offer a browse action, got %d", browseCount)
+				}
+				if !revealFound {
+					t.Fatal("file results must retain the system file manager shortcut")
+				}
+				return
+			}
 			want := plugin.FolderBrowseQuery(root)
 			if browseCount != 1 || api.query.QueryType != want.QueryType || api.query.QueryText != want.QueryText {
 				t.Fatalf("browse count=%d query=%+v, want %+v", browseCount, api.query, want)
-			}
-			if !item.IsDir && !revealFound {
-				t.Fatal("file results must retain the system file manager shortcut")
 			}
 		})
 	}

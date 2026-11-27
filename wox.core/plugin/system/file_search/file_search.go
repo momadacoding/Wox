@@ -1367,22 +1367,18 @@ func (c *FileSearchPlugin) buildFileSearchResultActions(ctx context.Context, ite
 		},
 	}
 
-	browsePath := item.Path
-	browseName := "i18n:plugin_folder_enter"
-	if !item.IsDir {
-		browsePath = filepath.Dir(item.Path)
-		browseName = "i18n:plugin_folder_browse_containing_folder"
-	}
-	actions = append(actions, plugin.QueryResultAction{
-		Name:                   browseName,
-		Icon:                   icons.Get(icons.ActionOpen),
-		Hotkey:                 "shift+enter",
-		PreventHideAfterAction: true,
-		Action: func(ctx context.Context, actionContext plugin.ActionContext) {
-			c.api.ChangeQuery(ctx, plugin.FolderBrowseQuery(browsePath))
-		},
-	})
-	if !item.IsDir {
+	// Only folders get an in-Wox browse action; for files, "open containing folder" covers it.
+	if item.IsDir {
+		actions = append(actions, plugin.QueryResultAction{
+			Name:                   "i18n:plugin_folder_enter",
+			Icon:                   icons.Get(icons.ActionOpen),
+			Hotkey:                 "shift+enter",
+			PreventHideAfterAction: true,
+			Action: func(ctx context.Context, actionContext plugin.ActionContext) {
+				c.api.ChangeQuery(ctx, plugin.FolderBrowseQuery(item.Path))
+			},
+		})
+	} else {
 		actions = append(actions, plugin.QueryResultAction{
 			Name: "i18n:plugin_file_open_containing_folder",
 			Icon: icons.Get(icons.ActionOpenContainingFolder),

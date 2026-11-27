@@ -28,7 +28,6 @@ func TestFolderActionsExposeStableIDs(t *testing.T) {
 	fileActions := folderPlugin.buildPathActions("file.txt", false, nil)
 	assertFolderActionIDs(t, fileActions, []string{
 		folderOpenActionID,
-		folderBrowseContainingFolderActionID,
 		folderOpenContainingFolderActionID,
 		folderCopyPathActionID,
 		folderCopyNameActionID,
@@ -51,7 +50,6 @@ func TestFolderActionsExposeStableIDs(t *testing.T) {
 	fileFavoriteActions := folderPlugin.buildFavoriteActions("main", "main.go", false, 0)
 	assertFolderActionIDs(t, fileFavoriteActions, []string{
 		folderOpenActionID,
-		folderBrowseContainingFolderActionID,
 		folderOpenContainingFolderActionID,
 		folderCopyPathActionID,
 		folderCopyNameActionID,
@@ -74,7 +72,8 @@ func TestFolderCopyNamePrefersTitleAndVolumeRoot(t *testing.T) {
 	}
 }
 
-// TestFolderShiftEnterNavigation keeps file, folder, favorite, and volume-root actions consistent.
+// TestFolderShiftEnterNavigation keeps folder, favorite, and volume-root actions consistent.
+// Files have no Shift+Enter browse action; "open containing folder" covers that need.
 func TestFolderShiftEnterNavigation(t *testing.T) {
 	root := t.TempDir()
 	volumeRoot := filepath.VolumeName(root) + string(os.PathSeparator)
@@ -86,9 +85,9 @@ func TestFolderShiftEnterNavigation(t *testing.T) {
 		want    string
 	}{
 		{"folder", p.buildPathActions(root, true, nil), root + string(os.PathSeparator)},
-		{"file", p.buildPathActions(filepath.Join(root, "report.txt"), false, nil), root + string(os.PathSeparator)},
+		{"file", p.buildPathActions(filepath.Join(root, "report.txt"), false, nil), ""},
 		{"favorite", p.buildFavoriteActions("Projects", root, true, 0), root + string(os.PathSeparator)},
-		{"file favorite", p.buildFavoriteActions("main", filepath.Join(root, "main.go"), false, 0), root + string(os.PathSeparator)},
+		{"file favorite", p.buildFavoriteActions("main", filepath.Join(root, "main.go"), false, 0), ""},
 		{"volume root", p.buildPathActions(volumeRoot, true, nil), volumeRoot},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -106,6 +105,12 @@ func TestFolderShiftEnterNavigation(t *testing.T) {
 					t.Fatal("browsing must keep Wox visible without becoming the default action")
 				}
 				action.Action(t.Context(), plugin.ActionContext{})
+			}
+			if test.want == "" {
+				if count != 0 {
+					t.Fatalf("file results must not offer a browse action, got %d", count)
+				}
+				return
 			}
 			if count != 1 || api.changed.QueryType != plugin.QueryTypeInput || api.changed.QueryText != test.want {
 				t.Fatalf("browse count=%d query=%+v, want %q", count, api.changed, test.want)
@@ -286,7 +291,7 @@ func TestFolderBrowseActionsUseSharedTriggerQuery(t *testing.T) {
 
 	api := &folderNavigationTestAPI{}
 	p := &FolderPlugin{api: api}
-	p.buildBrowseAction(path, true).Action(t.Context(), plugin.ActionContext{})
+	p.buildEnterFolderAction(path).Action(t.Context(), plugin.ActionContext{})
 	if api.changed.QueryType != plugin.FolderBrowseQuery(path).QueryType || api.changed.QueryText != plugin.FolderBrowseQuery(path).QueryText {
 		t.Fatalf("browse query = %+v, want %+v", api.changed, plugin.FolderBrowseQuery(path))
 	}
@@ -406,7 +411,6 @@ func TestFolderQueryFindsFileAndFolderFavorites(t *testing.T) {
 	}
 	assertFolderActionIDs(t, fileResult.Results[0].Actions, []string{
 		folderOpenActionID,
-		folderBrowseContainingFolderActionID,
 		folderOpenContainingFolderActionID,
 		folderCopyPathActionID,
 		folderCopyNameActionID,
